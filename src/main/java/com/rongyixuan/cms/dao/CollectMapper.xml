@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.rongyixuan.cms.dao.CollectMapper">
+	
+	<resultMap type="collect" id="collectResultMap">
+   <id column="id" property="id"/>
+   <result column="text" property="text"/>
+   <result column="url" property="url"/>
+   <result column="created" property="created"/>
+   <association property="user" javaType="user" select="com.rongyixuan.cms.dao.UserMapper.selectByPrimaryKey" column="user_id">
+   </association>  
+  
+  </resultMap>
+  
+  <!-- 添加收藏 -->
+  <insert id="insert">
+  
+  insert into cms_collect (text,url,created,user_id)values(#{text},#{url},#{created},${user.id})
+  
+  </insert>
+  <!-- 查找收藏 -->
+  <select id="selects" resultMap="collectResultMap">
+  
+  select * from cms_collect c  where user_id=#{id} order by created desc
+  
+  </select>
+  <!-- 根据用户查找收藏 -->
+  <select id="selectByText" resultType="int">
+  select count(*) from cms_collect c where user_id=#{user.id} and text=#{text}
+  </select>
+  
+  <!-- 删除收藏 -->
+  <delete id="deleteById" >
+  
+  delete from cms_collect where id=#{id}
+  
+  </delete>
+  
+</mapper>
