@@ -3,7 +3,12 @@ package com.rongyixuan.cms.domain;
 import java.io.Serializable;
 import java.util.Date;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Document;
+
+@Document(indexName = "article" ,type = "article")
 public class Article implements Serializable{
+	@Id
     private Integer id;
 
     private String title;

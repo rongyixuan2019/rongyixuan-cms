@@ -157,12 +157,14 @@
 			  //如果当前状态为正常,则改为停用.如果是停用则改为正常
 			
 			  var hot =$(obj).text()=="否"?"1":"0";
-			 
+			  alert(hot);
 			  $.post("/admin/article/update",{id:id,hot:hot},function(flag){
 		        if(flag){
 		        //	alert("操作成功");
 		        	$(obj).text(hot==0?"否":"是");//先改变按钮内容
+		        	alert(hot);
 		        	$(obj).attr("class",hot=="1"?"btn btn-success":"btn btn-info")//改变按钮颜色
+		        	
 		        }else{
 		        	alert("操作失败")
 		        }		  

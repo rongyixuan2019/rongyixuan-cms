@@ -82,5 +82,23 @@ public interface ArticleService {
 	 * @return: boolean
 	 */
 	boolean insertSelective(ArticleWithBLOBs article);
+	/** 
+	 * 高亮查询
+	 * @Title: selectES 
+	 * @Description: TODO
+	 * @param page
+	 * @param pageSize
+	 * @param key
+	 * @return
+	 * @return: PageInfo<Article>
+	 */
+	PageInfo<Article> selectES(Integer page, Integer pageSize, String key);
+	/** 
+	 * @Title: updateByPrimaryKeySelective 
+	 * @Description: TODO
+	 * @param article
+	 * @return: void
+	 */
+	void updateByPrimaryKeySelective(ArticleWithBLOBs article);
 
 }

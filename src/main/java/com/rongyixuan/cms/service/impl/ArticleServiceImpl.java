@@ -11,20 +11,29 @@
  */
 package com.rongyixuan.cms.service.impl;
 
+import java.util.Arrays;
 import java.util.List;
 
 import javax.annotation.Resource;
 
+import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.aggregation.AggregatedPage;
+import org.springframework.data.elasticsearch.core.query.IndexQuery;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.rongyixuan.cms.dao.ArticleMapper;
 import com.rongyixuan.cms.domain.Article;
 import com.rongyixuan.cms.domain.ArticleWithBLOBs;
+import com.rongyixuan.cms.domain.Category;
+import com.rongyixuan.cms.domain.Channel;
+import com.rongyixuan.cms.domain.User;
 import com.rongyixuan.cms.service.ArticleService;
+import com.rongyixuan.cms.utils.ESUtils;
 
 /** 
  * @ClassName: ArticleServiceImpl 
@@ -37,6 +46,9 @@ public class ArticleServiceImpl implements ArticleService {
 	
 	@Resource
 	private RedisTemplate< String , Article> redisTemplate;
+	
+	@Resource
+	private ElasticsearchTemplate elasticsearchTemplate;
 	
 	@Resource
 	private ArticleMapper articleMapper;
@@ -85,13 +97,42 @@ public class ArticleServiceImpl implements ArticleService {
 		try {
 			int result = articleMapper.updateByPrimaryKeySelective(article);
 			//审核通过文章
-			if(result > 0 && article.getStatus() != null && article.getStatus() == 1) {
+			if(result > 0 ) {
 				//判断当前要审核文章
 				//审核文章通过以后，要清空redis中对应的数据
 				
 				//清空redis
 				redisTemplate.delete("last_article");
+				
+				//清空redis热门文章的缓存
+				redisTemplate.delete("hot_article");
+				
+				//如果删除文章
+				if(article.getDeleted() != null && article.getDeleted() == 1) {
+					//删除es中数据
+					elasticsearchTemplate.delete(Article.class, article.getId().toString());
+					
+				}else {
+					//存入es中
+					IndexQuery query = new IndexQuery();
+					//根据子类中id的值，获取到Article对象的数据
+					Article art = articleMapper.selectByPrimaryKey(article.getId());
+					query.setObject(art);
+					
+					elasticsearchTemplate.index(query);
+				}
 			}
+			
+			/*
+			 * //审核通过文章 if(result > 0 && article.getHot() != null && article.getHot() == 1)
+			 * { //判断当前要审核文章 //审核文章通过以后，要清空redis中对应的数据
+			 * 
+			 * //清空redis redisTemplate.delete("hot_article");
+			 * 
+			 * } //添加审核过的文章 IndexQuery query = new IndexQuery(); long i =
+			 * System.currentTimeMillis(); query.setId(""+i); query.setObject(article);
+			 * elasticsearchTemplate.index(query );
+			 */
 			
 			return result > 0;
 		} catch (Exception e) {
@@ -182,20 +223,26 @@ public class ArticleServiceImpl implements ArticleService {
 			List<Article> articles = opsForList.range("hot_article", (page - 1) * pageSize, page * pageSize - 1);
 
 			// 设置数据
-			pageInfo = new PageInfo<Article>(articles, 3);
+			/* pageInfo = new PageInfo<Article>(articles, 3); */
 			// 上一页
-			pageInfo.setPrePage(page > 1 ? page - 1 : 1);
+			/* pageInfo.setPrePage(page > 1 ? page - 1 : 1); */
 			// 当前页
-			pageInfo.setPageNum(page);
-
+			/* pageInfo.setPageNum(page); */
+			// 获取总页数
+			/* int pages = (int) ((size + pageSize - 1) / pageSize); */
+			// 下一页
+			/* pageInfo.setNextPage(page >= pages ? pages : (page + 1)); */
+			
 			// 获取总条数
 			Long size = opsForList.size("hot_article");
-			// 获取总页数
-			int pages = (int) ((size + pageSize - 1) / pageSize);
-
-			// 下一页
-			pageInfo.setNextPage(page >= pages ? pages : (page + 1));
-
+			//使用pageHelper插件提供 的page分页类 ，传入pagenum 和 pagesize
+			Page<Article> pages = new Page<Article>(page,pageSize);
+			//page继承了arrayList，传入数据
+			pages.addAll(articles);
+			//传入总条数
+			pages.setTotal(size);
+			//放入pageInfo设置数据，为了使用页码导航，第二个参数是页码个数
+			pageInfo = new PageInfo<Article>(pages, 5);  
 		} else {
 			// 如果没有对应的键
 			// 从mysql中获取所有热门文章的数据
@@ -212,6 +259,50 @@ public class ArticleServiceImpl implements ArticleService {
 		}
 
 		return pageInfo;
+	}
+
+	/* (non Javadoc) 
+	 * 高亮查询首页从es里面查询，确保es里面都是有数据的
+	 * @Title: selectES
+	 * @Description: TODO
+	 * @param page
+	 * @param pageSize
+	 * @param key
+	 * @return 
+	 * @see com.rongyixuan.cms.service.ArticleService#selectES(java.lang.Integer, java.lang.Integer, java.lang.String) 
+	 */
+	@Override
+	public PageInfo<Article> selectES(Integer page, Integer pageSize, String key) {
+		//实体类中成员变量如果是实体类类型，则将其类对象，存入clazzs中
+				Class [] clazzs = new Class[] {User.class,Category.class,Channel.class};
+				
+				AggregatedPage<Article> selectObjects = ESUtils.selectObjects(elasticsearchTemplate, Article.class, Arrays.asList(clazzs), page -1 , pageSize, "id", new String[] {"title"}, key);
+				
+				//获取高亮后的结果
+				List<Article> content = selectObjects.getContent();
+				
+				//创建Page对象
+				Page<Article> page_list = new Page<Article>(page, pageSize);
+				
+				//设置数据
+				page_list.addAll(content);
+				
+				//设置总条数
+				page_list.setTotal(selectObjects.getTotalElements());
+				
+
+				return new PageInfo<Article>(page_list, 3);
+	}
+
+	/* (non Javadoc) 
+	 * @Title: updateByPrimaryKeySelective
+	 * @Description: TODO
+	 * @param article 
+	 * @see com.rongyixuan.cms.service.ArticleService#updateByPrimaryKeySelective(com.rongyixuan.cms.domain.ArticleWithBLOBs) 
+	 */
+	@Override
+	public void updateByPrimaryKeySelective(ArticleWithBLOBs article) {
+		articleMapper.updateByPrimaryKeySelective(article);
 	}
 
 }

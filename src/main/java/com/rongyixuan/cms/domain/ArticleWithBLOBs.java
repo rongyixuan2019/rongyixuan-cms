@@ -2,6 +2,8 @@ package com.rongyixuan.cms.domain;
 
 import java.io.Serializable;
 
+import org.springframework.data.elasticsearch.annotations.Document;
+@Document(indexName = "article",type = "article")
 public class ArticleWithBLOBs extends Article implements Serializable{
     private String content;
 

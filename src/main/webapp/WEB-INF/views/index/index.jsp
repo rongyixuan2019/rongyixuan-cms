@@ -111,10 +111,12 @@
 										<strong><a href="/article?id=${h.id }"
 											target="_blank">${h.title }</a></strong>
 									</h3>
+									
 									<p style="margin-top: 10px">
-										${h.user.username}
+										${h.user.username} 
 										<fmt:formatDate value="${h.updated }"
 											pattern="yyyy-MM-dd HH:mm:ss" />
+										
 									</p>
 								</div>
 							</div>

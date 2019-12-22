@@ -11,6 +11,8 @@
  */
 package com.rongyixuan.cms.vo;
 
+import org.springframework.data.elasticsearch.annotations.Document;
+
 import com.rongyixuan.cms.domain.ArticleWithBLOBs;
 
 /** 
@@ -19,6 +21,7 @@ import com.rongyixuan.cms.domain.ArticleWithBLOBs;
  * @author: 86155
  * @date: 2019年11月22日 下午7:07:01  
  */
+
 public class ArticleVO extends ArticleWithBLOBs {
 	private String url;//图片集的单个图片地址
 	private String descr;//图片描述
@@ -49,8 +52,9 @@ public class ArticleVO extends ArticleWithBLOBs {
 	 */
 	@Override
 	public String toString() {
-		return "ArticleVO [url=" + url + ", descr=" + descr + "]";
+		return "ArticleVO [url=" + url + ", descr=" + descr + ", toString()=" + super.toString() + "]";
 	}
+	
 	/**
 	 * @return the url
 	 */

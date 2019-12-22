@@ -2,6 +2,7 @@ package com.rongyixuan.cms.dao;
 
 import java.util.List;
 
+import com.github.pagehelper.PageInfo;
 import com.rongyixuan.cms.domain.User;
 
 public interface UserMapper {
@@ -34,4 +35,12 @@ public interface UserMapper {
 	 * @return: User
 	 */
 	User selectByName(String username);
+
+	/** 
+	 * @Title: selects 
+	 * @Description: TODO
+	 * @return
+	 * @return: PageInfo<User>
+	 */
+	PageInfo<User> selects();
 }

@@ -73,7 +73,7 @@ public class IndexController {
 	
 	@RequestMapping(value = { "", "/", "index" })
 	public String index(Article article, Model model, @RequestParam(defaultValue = "1") Integer page,
-			@RequestParam(defaultValue = "5") Integer pageSize) {
+			@RequestParam(defaultValue = "5") Integer pageSize,String key) {
 		// 访问方法开始时间
 				long s1 = System.currentTimeMillis();
 
@@ -100,7 +100,14 @@ public class IndexController {
 
 					@Override
 					public void run() {
-
+						if(key != null && !key.trim().equals("")) {
+							//如果搜索条件不为空，则查询es，进行高亮显示
+							PageInfo<Article> info = articleService.selectES(page, pageSize,key);
+							model.addAttribute("info", info);
+							model.addAttribute("key", key);
+							
+						}else {
+						
 						// 如果栏目为空则默认显示热点
 						if (article.getChannelId() == null) {
 							// 查询热点文章的列表
@@ -112,6 +119,7 @@ public class IndexController {
 							PageInfo<Article> info = articleService.selectHot(hot, page, pageSize);
 							model.addAttribute("info", info);
 						}
+					}
 					}
 				});
 
@@ -212,7 +220,8 @@ public class IndexController {
 	@RequestMapping("article")
 	public String article(Model model, Integer id,HttpServletRequest request) {
 		ArticleWithBLOBs article = articleService.selectByPrimaryKey(id);
-		
+		article.setHits(article.getHits()+1);
+		articleService.updateByPrimaryKeySelective(article);
 		//检查当前点击人是否登录.如果登录则根据标题和登录人查询是否收藏该文章
 		HttpSession session = request.getSession(false);
 		if(null!=session) {

@@ -42,6 +42,7 @@
 </head>
 <body>
 <input type="button" value="返回" onclick="selAll()">
+<h5>访问量：${article.hits }</h5>
 <div style="text-align: center">
 		<dl>
 			<dt>

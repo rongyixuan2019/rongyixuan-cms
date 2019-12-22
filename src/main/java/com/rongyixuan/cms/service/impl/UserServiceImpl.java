@@ -134,5 +134,5 @@ public class UserServiceImpl implements UserService {
 		
 		return userMapper.insertSelective(userVO)>0;
 	}
-
+	
 }
